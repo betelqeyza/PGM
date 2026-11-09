@@ -1,14 +1,15 @@
 package tc.oc.pgm.filters.matcher.party;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import org.bukkit.event.Event;
 import tc.oc.pgm.api.feature.FeatureReference;
 import tc.oc.pgm.api.filter.query.MatchQuery;
 import tc.oc.pgm.api.party.Competitor;
 import tc.oc.pgm.goals.GoalDefinition;
 import tc.oc.pgm.goals.events.GoalCompleteEvent;
+import tc.oc.pgm.goals.events.GoalStatusChangeEvent;
 
 /**
  * Matches teams/players who have completed the given objective. If a team is given, then the filter
@@ -25,7 +26,7 @@ public class GoalFilter implements CompetitorFilter {
 
   @Override
   public Collection<Class<? extends Event>> getRelevantEvents() {
-    return Collections.singleton(GoalCompleteEvent.class);
+    return Set.of(GoalCompleteEvent.class, GoalStatusChangeEvent.class);
   }
 
   public boolean matches(MatchQuery query, Optional<Competitor> competitor) {

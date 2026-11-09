@@ -170,7 +170,9 @@ public class ControlPoint extends SimpleGoal<ControlPointDefinition>
     this.capturingTime = Duration.ZERO;
     this.controllingTeam = controller;
 
-    if (oldCapturingTeam != this.capturingTeam || !oldCapturingTime.equals(this.capturingTime)) {
+    if (oldCapturingTeam != this.capturingTeam
+        || !oldCapturingTime.equals(this.capturingTime)
+        || oldControllingTeam != this.controllingTeam) {
       this.match.callEvent(new CapturingTimeChangeEvent(this.match, this));
       this.match.callEvent(new GoalStatusChangeEvent(this.match, this, null));
     }
@@ -183,12 +185,6 @@ public class ControlPoint extends SimpleGoal<ControlPointDefinition>
     if (oldControllingTeam != this.controllingTeam) {
       this.match.callEvent(
           new ControllerChangeEvent(this.match, this, oldControllingTeam, this.controllingTeam));
-      updateOwnerScore(oldControllingTeam, this.controllingTeam);
-      if (this.controllingTeam == null) {
-        this.match.callEvent(new GoalCompleteEvent(this.match, this, oldControllingTeam, false));
-      } else {
-        this.match.callEvent(new GoalCompleteEvent(this.match, this, this.controllingTeam, true));
-      }
     }
   }
 
@@ -205,9 +201,7 @@ public class ControlPoint extends SimpleGoal<ControlPointDefinition>
     }
     if (newControllingTeam != null) {
       scoreMatchModule.incrementScore(
-          newControllingTeam,
-          getDefinition().getPointsOwner(),
-          ScoreCause.CONTROL_POINT_LOST);
+          newControllingTeam, getDefinition().getPointsOwner(), ScoreCause.CONTROL_POINT_LOST);
     }
   }
 
