@@ -24,6 +24,7 @@ import org.jspecify.annotations.Nullable;
 import tc.oc.pgm.action.actions.ActionNode;
 import tc.oc.pgm.action.actions.CallAction;
 import tc.oc.pgm.action.actions.ControlAction;
+import tc.oc.pgm.action.actions.ControlPointStateAction;
 import tc.oc.pgm.action.actions.ControlWrapperAction;
 import tc.oc.pgm.action.actions.DropFlagAction;
 import tc.oc.pgm.action.actions.EnchantItemAction;
@@ -56,6 +57,7 @@ import tc.oc.pgm.api.map.MapProtos;
 import tc.oc.pgm.api.map.factory.MapFactory;
 import tc.oc.pgm.api.party.Party;
 import tc.oc.pgm.api.player.MatchPlayer;
+import tc.oc.pgm.controlpoint.ControlPointDefinition;
 import tc.oc.pgm.features.FeatureDefinitionContext;
 import tc.oc.pgm.filters.Filterable;
 import tc.oc.pgm.filters.matcher.StaticFilter;
@@ -756,6 +758,14 @@ public class ActionParser {
   @MethodParser("drop-flag")
   public DropFlagAction parseDropFlag(Element el, Class<?> scope) throws InvalidXMLException {
     return new DropFlagAction(parser.reference(FlagDefinition.class, el, "flag").required());
+  }
+
+  @MethodParser("control-point-state")
+  public ControlPointStateAction parseControlPointState(Element el, Class<?> scope)
+      throws InvalidXMLException {
+    return new ControlPointStateAction(
+        parser.reference(ControlPointDefinition.class, el, "objective").required(),
+        parser.parseEnum(ControlPointStateAction.Owner.class, el, "owner").required());
   }
 
   @MethodParser("pickup-flag")

@@ -156,6 +156,61 @@ public class ControlPoint extends SimpleGoal<ControlPointDefinition>
     return this.capturingTime;
   }
 
+  /**
+   * Set the owner of this ControlPoint and reset its capture state.
+   *
+   * @param controller the new owner, or null for neutral
+   */
+  public void setController(@Nullable Competitor controller) {
+    Competitor oldCapturingTeam = this.capturingTeam;
+    Duration oldCapturingTime = this.capturingTime;
+    Competitor oldControllingTeam = this.controllingTeam;
+
+    this.capturingTeam = null;
+    this.capturingTime = Duration.ZERO;
+    this.controllingTeam = controller;
+
+    if (oldCapturingTeam != this.capturingTeam || !oldCapturingTime.equals(this.capturingTime)) {
+      this.match.callEvent(new CapturingTimeChangeEvent(this.match, this));
+      this.match.callEvent(new GoalStatusChangeEvent(this.match, this, null));
+    }
+
+    if (oldCapturingTeam != this.capturingTeam) {
+      this.match.callEvent(
+          new CapturingTeamChangeEvent(this.match, this, oldCapturingTeam, this.capturingTeam));
+    }
+
+    if (oldControllingTeam != this.controllingTeam) {
+      this.match.callEvent(
+          new ControllerChangeEvent(this.match, this, oldControllingTeam, this.controllingTeam));
+      updateOwnerScore(oldControllingTeam, this.controllingTeam);
+      if (this.controllingTeam == null) {
+        this.match.callEvent(new GoalCompleteEvent(this.match, this, oldControllingTeam, false));
+      } else {
+        this.match.callEvent(new GoalCompleteEvent(this.match, this, this.controllingTeam, true));
+      }
+    }
+  }
+
+  private void updateOwnerScore(
+      @Nullable Competitor oldControllingTeam, @Nullable Competitor newControllingTeam) {
+    ScoreMatchModule scoreMatchModule = this.getMatch().getModule(ScoreMatchModule.class);
+    if (scoreMatchModule == null) return;
+
+    if (oldControllingTeam != null) {
+      scoreMatchModule.incrementScore(
+          oldControllingTeam,
+          getDefinition().getPointsOwner() * -1,
+          ScoreCause.CONTROL_POINT_OWNED);
+    }
+    if (newControllingTeam != null) {
+      scoreMatchModule.incrementScore(
+          newControllingTeam,
+          getDefinition().getPointsOwner(),
+          ScoreCause.CONTROL_POINT_LOST);
+    }
+  }
+
   @Override
   public Sound getCompletionSound(boolean isGood) {
     return isGood ? Sounds.CONTROL_POINT_GOOD : Sounds.CONTROL_POINT_BAD;
@@ -371,22 +426,7 @@ public class ControlPoint extends SimpleGoal<ControlPointDefinition>
       this.match.callEvent(
           new ControllerChangeEvent(this.match, this, oldControllingTeam, this.controllingTeam));
 
-      ScoreMatchModule scoreMatchModule = this.getMatch().getModule(ScoreMatchModule.class);
-      // Gives a set number of owner points to a team when captured, lost when an enemy captures
-      if (scoreMatchModule != null) {
-        if (oldControllingTeam != null) {
-          scoreMatchModule.incrementScore(
-              oldControllingTeam,
-              getDefinition().getPointsOwner() * -1,
-              ScoreCause.CONTROL_POINT_OWNED);
-        }
-        if (this.controllingTeam != null) {
-          scoreMatchModule.incrementScore(
-              this.controllingTeam,
-              getDefinition().getPointsOwner(),
-              ScoreCause.CONTROL_POINT_LOST);
-        }
-      }
+      updateOwnerScore(oldControllingTeam, this.controllingTeam);
       if (this.controllingTeam == null) {
         this.match.callEvent(new GoalCompleteEvent(this.match, this, oldControllingTeam, false));
       } else {
